@@ -13979,7 +13979,12 @@ cat <<EOF > test_l0.c
 #include "level_zero/zet_api.h"
 #include <vector>
 
-#define PTI_ASSERT(x) assert(x)
+void PTI_ASSERT(int x)
+{
+   if(x!=1)
+      exit(1);
+}
+
 
 inline ze_api_version_t GetDriverVersion(ze_driver_handle_t driver) {
   PTI_ASSERT(driver != nullptr);
@@ -14013,7 +14018,7 @@ int main()
 {
         ze_result_t status = ZE_RESULT_SUCCESS;
         status = zeInit(ZE_INIT_FLAG_GPU_ONLY);
-        assert(status == ZE_RESULT_SUCCESS);
+        PTI_ASSERT(status == ZE_RESULT_SUCCESS);
         ze_api_version_t version = GetZeVersion();
         if ((ZE_MAJOR_VERSION(version)==1)&&(ZE_MINOR_VERSION(version)<6))
                 return 1;
