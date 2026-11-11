@@ -756,7 +756,7 @@ void tool_tracing_callback(rocprofiler_callback_tracing_record_t record,
     // called the function hipKernelNameRefByPtr, used to get the name of a function
     // when hipLaunchKernel is called
     static thread_local int inside_hipKernelNameRefByPtr = 0;
-    if(inside_hipKernelNameRefByPtr && c_client_name_info.operation_names[record.kind][record.operation] == "hipKernelNameRefByPtr")
+    if(inside_hipKernelNameRefByPtr && strncmp(c_client_name_info.operation_names[record.kind][record.operation], "hipKernelNameRef", 16) == 0)
     {
       return;
     }
@@ -900,6 +900,19 @@ void tool_tracing_callback(rocprofiler_callback_tracing_record_t record,
             name_hipcall = name_hipcall + " " + demangle_kernel_rocprofsdk(hipKernelNameRefByPtr( host_function, nullptr), 1);
             inside_hipKernelNameRefByPtr = 0;
           }
+          //hipModuleLaunchKernel, hipExtModuleLaunchKernel, hipModuleLaunchCooperativeKernel
+          // (used by AMDGPU.jl, rocBLAS...) all have the hipFunction_t as first argument
+          else if (name_hipcall == "hipModuleLaunchKernel" || name_hipcall == "hipExtModuleLaunchKernel"
+                   || name_hipcall == "hipModuleLaunchCooperativeKernel")
+          {
+            auto* run_data = static_cast<rocprofiler_callback_tracing_hip_api_data_t*>(record.payload);
+            //We do not want to profile the call that we make
+            inside_hipKernelNameRefByPtr = 1;
+            const char* kernel_name = hipKernelNameRef(run_data->args.hipModuleLaunchKernel.func);
+            inside_hipKernelNameRefByPtr = 0;
+            if (kernel_name != nullptr)
+              name_hipcall = name_hipcall + " " + demangle_kernel_rocprofsdk(kernel_name, 1);
+          }
           TAU_START(name_hipcall.c_str());
         }
         if(record.phase == ROCPROFILER_CALLBACK_PHASE_EXIT)
@@ -914,6 +927,19 @@ void tool_tracing_callback(rocprofiler_callback_tracing_record_t record,
             name_hipcall = name_hipcall + " " + demangle_kernel_rocprofsdk(hipKernelNameRefByPtr( host_function, nullptr), 1);
             inside_hipKernelNameRefByPtr = 0;
 
+          }
+          //hipModuleLaunchKernel, hipExtModuleLaunchKernel, hipModuleLaunchCooperativeKernel
+          // (used by AMDGPU.jl, rocBLAS...) all have the hipFunction_t as first argument
+          else if (name_hipcall == "hipModuleLaunchKernel" || name_hipcall == "hipExtModuleLaunchKernel"
+                   || name_hipcall == "hipModuleLaunchCooperativeKernel")
+          {
+            auto* run_data = static_cast<rocprofiler_callback_tracing_hip_api_data_t*>(record.payload);
+            //We do not want to profile the call that we make
+            inside_hipKernelNameRefByPtr = 1;
+            const char* kernel_name = hipKernelNameRef(run_data->args.hipModuleLaunchKernel.func);
+            inside_hipKernelNameRefByPtr = 0;
+            if (kernel_name != nullptr)
+              name_hipcall = name_hipcall + " " + demangle_kernel_rocprofsdk(kernel_name, 1);
           }
           TAU_STOP(name_hipcall.c_str());
           if (name_hipcall.compare(0, 9, "hipMemcpy") == 0)
