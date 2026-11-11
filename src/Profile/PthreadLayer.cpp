@@ -408,7 +408,7 @@ int tau_pthread_create_wrapper(pthread_create_p pthread_create_call,
   }
 
   TauInternalFunctionGuard protects_this_function;
-
+  PthreadLayer::InitializeThreadData();
   bool * wrapped = (bool*)pthread_getspecific(wrapper_flags_key);
   if (!wrapped) {
     wrapped = new bool;
@@ -534,7 +534,7 @@ int tau_pthread_join_wrapper(pthread_join_p pthread_join_call,
     pthread_t thread, void ** retval)
 {
   TauInternalFunctionGuard protects_this_function;
-
+  PthreadLayer::InitializeThreadData();
   bool * wrapped = (bool*)pthread_getspecific(wrapper_flags_key);
   if (!wrapped) {
     wrapped = new bool;
@@ -575,7 +575,7 @@ int tau_pthread_barrier_wait_wrapper(pthread_barrier_wait_p pthread_barrier_wait
     pthread_barrier_t * barrier)
 {
   TauInternalFunctionGuard protects_this_function;
-
+  PthreadLayer::InitializeThreadData();
   bool * wrapped = (bool*)pthread_getspecific(wrapper_flags_key);
   if (!wrapped) {
     wrapped = new bool;
